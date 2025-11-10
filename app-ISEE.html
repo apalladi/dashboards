@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulatore ISEE & BTP – Extra rendimento (Win95)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ===== Windows 95 Look ===== */
+    :root{
+      --win95-bg: #c0c0c0;
+      --win95-desktop: #008080;
+      --win95-text: #000000;
+      --win95-light: #ffffff;
+      --win95-shadow: #808080;
+      --win95-dark: #000000;
+      --win95-blue: #000080;
+      --win95-blue-light: #0000aa;
+    }
+
+    body { 
+      margin:0; 
+      padding:20px; 
+      background: var(--win95-desktop);
+      color: var(--win95-text);
+      font-family: "MS Sans Serif", Tahoma, Verdana, sans-serif;
+      font-size: 13px;
+    }
+
+    .container { max-width: 980px; margin: 0 auto; }
+
+    .card {
+      background: var(--win95-bg);
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      padding: 0;
+    }
+
+    .card .titlebar {
+      background: linear-gradient(to right, var(--win95-blue), var(--win95-blue-light));
+      color: #ffffff;
+      padding: 6px 8px;
+      font-weight: bold;
+      display:flex; align-items:center; gap:6px;
+      user-select:none;
+    }
+
+    .card .content { 
+      padding: 12px; 
+      border-top: 2px solid var(--win95-light);
+      border-left: 2px solid var(--win95-light);
+      border-right: 2px solid var(--win95-shadow);
+      border-bottom: 2px solid var(--win95-shadow);
+    }
+
+    h1 { 
+      font-size: 18px; 
+      font-weight: bold; 
+      color: #ffffff; 
+      background: linear-gradient(to right, var(--win95-blue), var(--win95-blue-light));
+      padding: 8px 10px; 
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      margin: 0 0 12px 0;
+    }
+
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px; }
+
+    label { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+    .field { margin-bottom:6px; }
+    input[type="number"] { 
+      width:100%; 
+      padding:4px; 
+      background:#fff; 
+      color: var(--win95-text);
+      border: 2px solid var(--win95-shadow);
+      border-left-color: var(--win95-light);
+      border-top-color: var(--win95-light);
+      outline:none;
+      box-sizing:border-box;
+    }
+    input[type="checkbox"] { width:16px; height:16px; margin-left:10px; }
+
+    .output-line { display:flex; justify-content:space-between; align-items:center; margin:4px 0; }
+    .pos { color:#006400; font-weight:bold; }
+    .neg { color:#7f4f00; font-weight:bold; }
+    .totale { margin-top:8px; padding-top:8px; border-top: 1px dashed var(--win95-shadow); font-weight:bold; }
+
+    .divider { border:0; height:1px; background: var(--win95-shadow); margin:8px 0; }
+
+    .subtitle { font-size:14px; font-weight:bold; margin:6px 0; color:#000; }
+
+    .highlight-percent { color:#0000aa; font-weight:800; font-size:18px; }
+
+    .info { cursor:help; color:#0000aa; margin-left:6px; font-weight:bold; }
+    .tooltip { 
+      display:none; position:absolute; top:18px; left:0; 
+      background: #ffffe1; color:#000; 
+      border: 1px solid #000; padding:6px 8px; width: 280px; 
+      box-shadow:none; z-index: 10; 
+    }
+    .output-line { position:relative; }
+    .output-line:hover .tooltip { display:block; }
+
+    canvas { margin-top:10px; background:#fff; border:1px solid #000; }
+
+    .stack { display:flex; flex-direction:column; gap:12px; }
+  </style>
+</head>
+<body>
+  <div class="container stack">
+    <h1>📊 Simulatore ISEE & BTP – Extra rendimento</h1>
+
+    <div class="grid">
+      <div class="card">
+        <div class="titlebar">Input</div>
+        <div class="content">
+          <div class="field">
+            <label>Reddito lordo annuo (€)</label>
+            <input id="reddito" type="number" value="70000" />
+          </div>
+          <div class="field">
+            <label>Affitto annuo (€)</label>
+            <input id="affitto" type="number" value="10000" />
+          </div>
+          <div class="field">
+            <label>Patrimonio mobiliare (€)</label>
+            <input id="patrimonio" type="number" value="100000" />
+          </div>
+          <div class="field">
+            <label>Patrimonio immobiliare (€)</label>
+            <input id="immobile" type="number" value="100000" />
+          </div>
+          <div class="field">
+            <label>Numero figli sotto i 3 anni</label>
+            <input id="under3" type="number" value="1" />
+          </div>
+          <div class="field">
+            <label>Numero figli sopra i 3 anni</label>
+            <input id="over3" type="number" value="1" />
+          </div>
+          <div class="field">
+            <label>Figlio nato durante l'anno (bonus nuovi nati)
+              <input id="natoAnno" type="checkbox" checked />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="titlebar">Risultati sintetici</div>
+        <div class="content">
+          <div id="risultati"></div>
+          <canvas id="agevolazioniChart" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let chart;
+
+    function euro(v){return v.toLocaleString('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0});}
+
+    function assegno(isee, figli){
+      const max = 199.4, min = 54.1, L=17090, H=43200;
+      const f = x => x<=L?max:(x>=H?min:max+(x-L)/(H-L)*(min-max));
+      return f(isee)*12*figli;
+    }
+
+    function bonusNido(isee, under3){
+      let val;
+      if(isee <= 25000) val = 3000;
+      else if(isee <= 40000) val = 2500;
+      else val = 1500;
+      return val * under3;
+    }
+
+    function ecoBonus(isee){
+      if(isee <= 30000) return 11000;
+      if(isee <= 40000) return 9000;
+      return 0;
+    }
+
+    function renderChart(data){
+      const ctx = document.getElementById('agevolazioniChart').getContext('2d');
+      if(chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Assegno unico', 'Bonus nido', 'Bonus nuovi nati', 'Ecoincentivo auto', 'Totale'],
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              'rgba(0, 128, 128, 0.85)',
+              'rgba(0, 0, 168, 0.85)',
+              'rgba(128, 0, 128, 0.85)',
+              'rgba(0, 0, 128, 0.85)',
+              'rgba(128, 128, 0, 0.9)'
+            ],
+            borderColor: ['#000','#000','#000','#000','#000'],
+            borderWidth: 1,
+            borderRadius: 0,
+            barThickness: 16
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          scales: {
+            x: { ticks: { color:'#000', font:{family:'MS Sans Serif'} }, grid: { color:'#b0b0b0' } },
+            y: { ticks: { color:'#000', font:{family:'MS Sans Serif'} }, grid: { color:'#d0d0d0' } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => '+' + euro(ctx.parsed.x) }, backgroundColor:'#ffffe1', titleColor:'#000', bodyColor:'#000', borderColor:'#000', borderWidth:1 }
+          },
+          animation: { duration: 600, easing: 'linear' }
+        }
+      });
+    }
+
+    function compute(){
+      const reddito = +document.getElementById('reddito').value;
+      const affitto = +document.getElementById('affitto').value;
+      const patrimonio = +document.getElementById('patrimonio').value;
+      const immobile = +document.getElementById('immobile').value;
+      const under3 = +document.getElementById('under3').value;
+      const over3 = +document.getElementById('over3').value;
+      const natoAnno = document.getElementById('natoAnno').checked;
+      const figli = under3 + over3;
+
+      const scala = 2.46;
+      const franchigia = 10000;
+      const detAffitto = Math.min(7000 + Math.max(0, figli-2)*500, affitto);
+
+      const patrA = Math.max(0, patrimonio - franchigia);
+      const iseA = (reddito - detAffitto) + 0.20*patrA + 0.20*immobile;
+      const iseeA = iseA/scala;
+
+      // ✅ Corretto: detrazione massima di 50.000 € di BTP per nucleo familiare
+      const btpEsenti = Math.min(50000, patrimonio);
+      const patrB = Math.max(0, patrimonio - btpEsenti - franchigia);
+      const iseB = (reddito - detAffitto) + 0.20*patrB + 0.20*immobile;
+      const iseeB = iseB/scala;
+
+      const deltaISEE = iseeA - iseeB;
+
+      const assegnoA = assegno(iseeA, figli);
+      const assegnoB = assegno(iseeB, figli);
+      const bonusNidoA = bonusNido(iseeA, under3);
+      const bonusNidoB = bonusNido(iseeB, under3);
+      const ecoA = ecoBonus(iseeA);
+      const ecoB = ecoBonus(iseeB);
+
+      const dAssegno = assegnoB - assegnoA;
+      const dNido = bonusNidoB - bonusNidoA;
+      const dNascita = natoAnno && iseeA >= 40000 && iseeB < 40000 ? 1000 : 0;
+      const dEco = ecoB - ecoA;
+
+      const totale = dAssegno + dNido + dNascita + dEco;
+      const rendimento = (totale / patrimonio * 100).toFixed(2);
+
+      document.getElementById('risultati').innerHTML = `
+        <div class='output-line'>ISEE senza BTP: <span>${euro(iseeA)}</span></div>
+        <div class='output-line'>ISEE con BTP (50k per nucleo familiare): <span class='pos'>${euro(iseeB)}</span></div>
+        <div class='output-line'>Differenza ISEE: <span class='pos'>${euro(deltaISEE)}</span></div>
+        <div class='divider'></div>
+        <div class='subtitle'>Agevolazioni</div>
+        <div class='output-line'>Assegno unico <span class='info'>ℹ️<div class='tooltip'>Importo per figlio: 199,4€/mese (ISEE ≤17.090€) → 54,1€/mese (ISEE ≥43.200€). Calcolo lineare tra le soglie.</div></span> <span class='pos'>+${euro(dAssegno)}</span></div>
+        <div class='output-line'>Bonus asilo nido <span class='info'>ℹ️<div class='tooltip'>Per figlio &lt;3 anni: ISEE ≤25.000€ → 3.000€; 25.001–40.000€ → 2.500€; &gt;40.000€ → 1.500€.</div></span> <span class='pos'>+${euro(dNido)}</span></div>
+        <div class='output-line'>Bonus nuovi nati <span class='info'>ℹ️<div class='tooltip'>Bonus 1.000€ se ISEE &lt; 40.000€. Valutato solo se lo scenario B scende sotto soglia mentre A era sopra.</div></span> <span class='pos'>+${euro(dNascita)}</span></div>
+        <div class='output-line'>Ecoincentivo auto 2025 <span class='info'>ℹ️<div class='tooltip'>ISEE ≤30.000€ → 11.000€; 30.001–40.000€ → 9.000€; &gt;40.000€ → 0€.</div></span> <span class='pos'>+${euro(dEco)}</span></div>
+        <div class='totale output-line'>Totale agevolazioni: <span class='pos'>${euro(totale)}</span></div>
+        <div class='output-line'>Extra rendimento: <span class='highlight-percent'>${rendimento}%</span> sul patrimonio mobiliare</div>`;
+
+      renderChart([dAssegno, dNido, dNascita, dEco, totale]);
+    }
+
+    document.querySelectorAll('input').forEach(i=>i.addEventListener('input',compute));
+    compute();
+  </script>
+</body>
+</html>
