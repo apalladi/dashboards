@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>🎄 Tombola Monte Carlo</title>
+<style>
+body {
+    margin: 0;
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    background: radial-gradient(circle at top, #b11226, #7a0c1b);
+    color: white;
+    overflow: hidden;
+}
+
+/* Titolo */
+header {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 36px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+/* Layout */
+.container {
+    display: flex;
+    height: 100vh;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.box {
+    width: 25%;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+.tree {
+    font-size: 160px;
+    text-align: center;
+    filter: drop-shadow(0 0 10px gold);
+}
+
+/* Form */
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: none;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+input[type="checkbox"] {
+    transform: scale(1.3);
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    cursor: pointer;
+    background: linear-gradient(#2a9d8f, #1f7a6b);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+}
+
+button:hover {
+    background: linear-gradient(#34b3a1, #238f7e);
+}
+
+#output {
+    font-size: 24px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* Fiocchi di neve */
+.snowflake {
+    position: fixed;
+    top: -10px;
+    color: white;
+    font-size: 20px;
+    opacity: 0.8;
+    animation: fall linear infinite;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(110vh);
+    }
+}
+</style>
+</head>
+<body>
+
+<header>🎄 Tombola Monte Carlo 🎄</header>
+
+<div class="container">
+
+<div class="box">
+    <h2><span style="color: lime;">🎫</span> Le tue cartelle</h2>
+    <input id="gio" type="number" value="3" min="1">
+
+    <h2><span style="color: gold;">🎟️</span> Cartelle degli avversari</h2>
+    <input id="avv" type="number" value="10" min="1">
+
+    <div class="checkbox">
+        <input id="tab" type="checkbox" checked>
+        <label for="tab">Tabellone incluso</label>
+    </div>
+
+    <button onclick="calcola()">🎲 Simula le partite</button>
+</div>
+
+<div class="tree" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+    <div style="font-size: 120px;">🎄</div>
+    <img src="tombola_img.webp" alt="Tombola" style="max-width: 100%; max-height: 220px;">
+</div>
+
+<div class="box">
+    <h2>📊 Risultato</h2>
+    <div id="output">Premi il bottone!</div>
+</div>
+
+</div>
+
+<script>
+/* Fiocchi di neve */
+for (let i = 0; i < 25; i++) {
+    let s = document.createElement("div");
+    s.className = "snowflake";
+    s.innerHTML = "❄";
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.animationDuration = 5 + Math.random() * 5 + "s";
+    s.style.fontSize = 12 + Math.random() * 18 + "px";
+    document.body.appendChild(s);
+}
+
+/* Logica Tombola */
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function generaCartelle(n) {
+    let cartelle = [];
+    for (let i = 0; i < n; i++) {
+        let nums = shuffle([...Array(90).keys()].map(x => x + 1)).slice(0, 15);
+        cartelle.push(nums);
+    }
+    return cartelle;
+}
+
+function creaTabellone() {
+    let tab = [];
+    for (let i = 1; i <= 90; i += 15) {
+        let r = [];
+        for (let j = i; j < i + 15; j++) r.push(j);
+        tab.push(r);
+    }
+    return tab;
+}
+
+function partita(cartGio, cartAvv) {
+    let estrazione = shuffle([...Array(90).keys()].map(x => x + 1));
+    let pos = {};
+    estrazione.forEach((n, i) => pos[n] = i);
+
+    let tGio = Math.min(...cartGio.map(c => Math.max(...c.map(n => pos[n]))));
+    let tAvv = Math.min(...cartAvv.map(c => Math.max(...c.map(n => pos[n]))));
+
+    if (tGio < tAvv) return 1;
+    if (tGio > tAvv) return 0;
+    return 0.5; // pareggio
+}
+
+function monteCarlo(nGio, nAvv, tabellone, cicli = 10000) {
+    let vittorie = 0;
+    for (let i = 0; i < cicli; i++) {
+        let gio = generaCartelle(nGio);
+        let avv = generaCartelle(nAvv);
+        if (tabellone) avv = avv.concat(creaTabellone());
+        vittorie += partita(gio, avv);
+    }
+    return (100 * vittorie / cicli).toFixed(2);
+}
+
+function calcola() {
+    document.getElementById("output").innerHTML = "🎅 Sto mescolando i numeri...";
+    setTimeout(() => {
+        let gio = parseInt(document.getElementById("gio").value);
+        let avv = parseInt(document.getElementById("avv").value);
+        let tab = document.getElementById("tab").checked;
+        let p = monteCarlo(gio, avv, tab);
+        document.getElementById("output").innerHTML =
+            "🎉 Probabilità di vittoria:<br><b>" + p + "%</b>";
+    }, 50);
+}
+</script>
+
+</body>
+</html>
